@@ -8,4 +8,6 @@ if (process.env.VERCEL !== '1') {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
+console.log("Index.js loaded. Environment:", process.env);
+
 module.exports = app;

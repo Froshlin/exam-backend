@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node backend/index.js",
-    "vercel-build": "echo 'Build script'",
+    "start": "node index.js",
+    "vercel-build": "npm install",
     "server": "nodemon server.js"
   },
   "keywords": [],
