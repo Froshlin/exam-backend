@@ -65,6 +65,10 @@ export default function Login() {
     }
   };
 
+  const handleRegisterRedirect = () => {
+    router.push('/register');
+  };
+
   return (
     <div className="auth-container">
       <div className="auth-card">
@@ -112,6 +116,16 @@ export default function Login() {
 
           <button type="submit" className="submit-button">Login</button>
         </form>
+         {/* Pure CSS Registration Link */}
+         <div style={{
+          marginTop: '20px', 
+          textAlign: 'center',
+          color: '#007bff',
+          cursor: 'pointer',
+          textDecoration: 'underline'
+        }} onClick={handleRegisterRedirect}>
+          Don't have an account? Register here
+        </div>
       </div>
     </div>
   );
