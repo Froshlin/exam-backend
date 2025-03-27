@@ -34,6 +34,13 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/questions', questionRoutes);
 
-// Start Server
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// // Start Server
+// const PORT = process.env.PORT || 8000;
+// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.get("/api/test", (req, res) => {
+  res.json({ message: "Backend is working!" });
+});
+
+// Export for Vercel serverless functions
+module.exports = app;
