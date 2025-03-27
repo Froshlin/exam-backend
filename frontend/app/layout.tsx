@@ -1,9 +1,9 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google"; 
 import "./globals.css"; // Keep this for Tailwind
-import '@/styles/globals.css'; // Optional, if you have additional global styles
 
-const geistSans = Geist({
-  // your configuration
+const geistSans = Inter({
+  subsets: ["latin"], // Add 'latin' or 'latin-ext' to fix the error
+  preload: true, 
 });
 
 export default function RootLayout({
