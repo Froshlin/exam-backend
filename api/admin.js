@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Question = require('../models/Question');
-const authMiddleware = require('../middleWare/authMiddleware'); // Fixed incorrect casing
+const authMiddleware = require('../middleware/authMiddleware'); // Fixed incorrect casing
 const router = express.Router();
 
 // Middleware to check if user is admin
