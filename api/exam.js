@@ -27,8 +27,13 @@ router.get('/:courseId', async (req, res) => {
 // Submit Exam for Grading
 router.post('/:courseId/submit', async (req, res) => {
   const { answers } = req.body;
+  const { courseId } = req.params;
 
-  const exam = await Exam.findOne({ courseId: req.params.courseId });
+  if (!courseId) {
+    return res.status(400).json({ message: 'Course ID is required' });
+  }
+
+  const exam = await Exam.findOne({ courseId });
   if (!exam) {
     return res.status(404).json({ message: 'Exam not found' });
   }
@@ -45,5 +50,6 @@ router.post('/:courseId/submit', async (req, res) => {
 
   res.json({ score: percentage });
 });
+
 
 module.exports = router;
