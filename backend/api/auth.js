@@ -4,84 +4,70 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const router = express.Router();
 
-// Register Route
+// Register Route for Students
 router.post("/register", async (req, res) => {
   try {
-    console.log("Received registration payload:", req.body);
+    const { role, password, matricNumber } = req.body;
 
-    const { role, password, email, matricNumber } = req.body;
-
-    // Validate input based on role
-    if (role === "admin" && !email) {
-      return res.status(400).json({ message: "Admin email is required" });
+    if (role !== "student") {
+      return res.status(400).json({ message: "Invalid role for this endpoint" });
     }
 
-    if (role === "student" && !matricNumber) {
-      return res
-        .status(400)
-        .json({ message: "Matric number is required for students" });
+    if (!matricNumber) {
+      return res.status(400).json({ message: "Matric number is required" });
     }
 
-    // Check for existing user
-    let existingUser;
-    if (role === "admin") {
-      existingUser = await User.findOne({ email });
-    } else {
-      existingUser = await User.findOne({ matricNumber });
-    }
+    const existingUser = await User.findOne({ matricNumber });
 
     if (existingUser) {
-      console.log("Existing user found:", existingUser);
-      return res.status(400).json({
-        message:
-          role === "admin"
-            ? "An admin with this email already exists"
-            : "A student with this matric number already exists",
-      });
+      return res.status(400).json({ message: "A student with this matric number already exists" });
     }
 
-    // Create new user object
-    const user = new User({
-      role,
-      password, // Password hashing middleware should be applied in the User model
-      ...(role === "admin" ? { email } : { matricNumber }),
-    });
+    const user = new User({ role: "student", password, matricNumber });
 
-    console.log("Saving new user:", user);
+    await user.save();
 
-    try {
-      await user.save();
-      console.log("User saved successfully:", user);
+    const token = jwt.sign(
+      { id: user._id, role: user.role, matricNumber: user.matricNumber },
+      process.env.JWT_SECRET || 'your-jwt-secret',
+      { expiresIn: "24h" } // Token expires in 24 hours, but inactivity logout will enforce 2 hours
+    );
 
-      // Generate JWT token only after successful registration
-      const token = jwt.sign(
-        { id: user._id, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-      );
+    return res.status(201).json({ token, message: "Student registration successful" });
 
-      return res
-        .status(201)
-        .json({ token, message: "Registration successful" });
-    } catch (saveError) {
-      console.error("Save error:", saveError);
-
-      // Handle duplicate key error (code 11000)
-      if (saveError.code === 11000) {
-        const duplicatedField = Object.keys(saveError.keyPattern)[0];
-        return res.status(400).json({
-          message: `${duplicatedField} is already in use`,
-          error: saveError,
-        });
-      }
-
-      return res.status(500).json({
-        message: "Error saving user",
-        error: saveError.message,
-      });
-    }
   } catch (error) {
-    console.error("Unexpected error in registration:", error);
+    console.error("Student registration error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Admin Registration Route (No super admin required)
+router.post("/register-admin", async (req, res) => {
+  try {
+    const { role, email, password } = req.body;
+
+    if (role !== "admin") {
+      return res.status(400).json({ message: "Invalid role for this endpoint" });
+    }
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({ message: "An admin with this email already exists" });
+    }
+
+    const user = new User({ role: "admin", email, password });
+
+    await user.save();
+
+    return res.status(201).json({ message: "Admin registration successful" });
+
+  } catch (error) {
+    console.error("Admin registration error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -92,51 +78,67 @@ router.post("/login", async (req, res) => {
     const { role, password, matricNumber, email } = req.body;
 
     if (role === "student" && !matricNumber) {
-      return res
-        .status(400)
-        .json({ message: "Matric number is required for students" });
+      return res.status(400).json({ message: "Matric number is required for students" });
     }
 
     if (role === "admin" && !email) {
       return res.status(400).json({ message: "Email is required for admins" });
     }
 
-    // Find user based on role-specific identifier
-    const user =
-      role === "student"
-        ? await User.findOne({ matricNumber })
-        : await User.findOne({ email });
+    const user = role === "student"
+      ? await User.findOne({ matricNumber })
+      : await User.findOne({ email });
 
-    if (!user) {
+    if (!user || user.role !== role) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Generate token with role
+    // Update last activity
+    user.lastActivity = new Date();
+    await user.save();
+
     const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
-      }
+      { id: user._id, role: user.role, matricNumber: user.matricNumber },
+      process.env.JWT_SECRET || 'your-jwt-secret',
+      { expiresIn: "24h" } // Token expires in 24 hours, but inactivity logout will enforce 2 hours
     );
 
     res.json({
       token,
       role: user.role,
       message: "Login successful",
-      ...(role === "admin"
-        ? { email: user.email }
-        : { matricNumber: user.matricNumber }),
+      ...(role === "admin" ? { email: user.email } : { matricNumber: user.matricNumber }),
     });
+
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Get logged-in user details
+router.get("/me", async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication token required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-jwt-secret');
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    res.status(403).json({ message: 'Invalid token' });
   }
 });
 

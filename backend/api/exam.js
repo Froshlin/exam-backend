@@ -1,5 +1,6 @@
 const express = require('express');
 const Exam = require('../models/Exam');
+const Question = require('../models/Question');
 const router = express.Router();
 
 // Create an exam (Admin-only route)
@@ -27,23 +28,30 @@ router.get('/:courseId', async (req, res) => {
 // Submit Exam for Grading
 router.post('/:courseId/submit', async (req, res) => {
   const { answers } = req.body;
+  const { courseId } = req.params;
 
-  const exam = await Exam.findOne({ courseId: req.params.courseId });
-  if (!exam) {
-    return res.status(404).json({ message: 'Exam not found' });
-  }
-
-  let score = 0;
-  exam.questions.forEach((question) => {
-    if (answers[question._id] === question.correctOption) {
-      score += 1;
+  try {
+    // Fetch questions from the Question collection instead of Exam
+    const questions = await Question.find({ courseId });
+    if (!questions || questions.length === 0) {
+      return res.status(404).json({ message: 'Questions not found for this course' });
     }
-  });
 
-  const totalQuestions = exam.questions.length;
-  const percentage = (score / totalQuestions) * 100;
+    let score = 0;
+    questions.forEach((question) => {
+      if (answers[question._id] === question.correctAnswer) {
+        score += 1;
+      }
+    });
 
-  res.json({ score: percentage });
+    const totalQuestions = questions.length;
+    const percentage = (score / totalQuestions) * 100;
+
+    res.status(200).json({ score: percentage });
+  } catch (err) {
+    console.error('Error submitting exam:', err);
+    res.status(500).json({ message: 'Error submitting exam', error: err.message });
+  }
 });
 
 module.exports = router;

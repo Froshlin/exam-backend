@@ -1,57 +1,49 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
-const userSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
+  role: {
+    type: String,
+    required: true,
+    enum: ["student", "admin"],
+  },
   matricNumber: {
     type: String,
-    unique: true,
-    required: function () { return this.role === "student"; },
-    sparse: true  // Allows multiple null values
+    required: function() { return this.role === "student"; },
+    unique: function() { return this.role === "student"; },
   },
   email: {
     type: String,
-    unique: true,
-    required: function () { return this.role === "admin"; },
-    sparse: true  // Allows multiple null values
+    required: function() { return this.role === "admin"; },
+    unique: function() { return this.role === "admin"; },
   },
   password: {
     type: String,
-    required: true
+    required: true,
   },
-  role: {
-    type: String,
-    enum: ['student', 'admin'],  // Ensures only 'student' or 'admin' roles are used
-    required: true
-  }
-}, 
-{ timestamps: true });
-
-
-// // Validation middleware
-// userSchema.pre('validate', function(next) {
-//   if (this.role === 'student' && !this.matricNumber) {
-//     this.invalidate('matricNumber', 'Matric number is required for students');
-//   }
-  
-//   if (this.role === 'admin' && !this.email) {
-//     this.invalidate('email', 'Email is required for admins');
-//   }
-  
-//   next();
-// });
-
-// Hash the password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  lastActivity: { // Added for inactivity tracking
+    type: Date,
+    default: Date.now,
+  },
 });
 
-// Compare entered password with hashed password
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
+// Middleware to hash password before saving
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    return next();
+  }
 
-const User = mongoose.model('User', userSchema);
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
-module.exports = User;
+module.exports = mongoose.model("User", UserSchema);
