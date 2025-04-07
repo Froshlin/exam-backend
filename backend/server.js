@@ -10,6 +10,7 @@ const adminRoutes = require('./api/admin');
 const courseRoutes = require('./api/courses');
 const questionRoutes = require('./api/questions');
 const User = require('./models/User');
+const userRoutes = require('./api/users');
 
 const app = express();
 
@@ -84,6 +85,7 @@ app.use('/api/exam', authenticateToken, examRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
 app.use('/api/courses', authenticateToken, courseRoutes);
 app.use('/api/questions', authenticateToken, questionRoutes);
+app.use('/api/users', authenticateToken, userRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 8000;

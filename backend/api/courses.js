@@ -30,7 +30,14 @@ router.get("/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { _id, name } = req.body;
-    const newCourse = new Course({ _id, name });
+
+    // Validate that name is provided
+    if (!name) {
+      return res.status(400).json({ message: "Course name is required" });
+    }
+
+    // Create a new course (let MongoDB generate _id if not provided)
+    const newCourse = new Course({ _id: _id || undefined, name });
     await newCourse.save();
     res.status(201).json(newCourse);
   } catch (err) {
@@ -42,6 +49,12 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { name } = req.body;
+
+    // Validate that name is provided
+    if (!name) {
+      return res.status(400).json({ message: "Course name is required" });
+    }
+
     const updatedCourse = await Course.findByIdAndUpdate(
       req.params.id,
       { name },
