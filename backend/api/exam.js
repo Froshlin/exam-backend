@@ -64,6 +64,11 @@ router.post("/:courseId/submit", authenticateToken, async (req, res) => {
       return res.status(403).json({ message: "Only students can submit exams" });
     }
 
+    // Ensure user.grades is an array
+    if (!Array.isArray(user.grades)) {
+      user.grades = [];
+    }
+
     // Check if the user already has a grade for this course
     const existingGradeIndex = user.grades.findIndex(
       (grade) => grade.courseId === courseId
