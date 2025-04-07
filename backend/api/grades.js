@@ -23,14 +23,19 @@ router.post("/", async (req, res) => {
 
 // GET grades for a specific student
 router.get("/student/:studentId", async (req, res) => {
-  try {
-    const grades = await Grade.find({ studentId: req.params.studentId })
-      .populate("courseId", "name") // Populate the course name
-      .sort({ submittedAt: -1 }); // Sort by most recent
-    res.json(grades);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+    try {
+      const { studentId } = req.params;
+      if (!studentId || studentId === "undefined") {
+        return res.status(400).json({ message: "Invalid student ID" });
+      }
+  
+      const grades = await Grade.find({ studentId })
+        .populate("courseId", "name")
+        .sort({ submittedAt: -1 });
+      res.json(grades);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
 
 module.exports = router;
