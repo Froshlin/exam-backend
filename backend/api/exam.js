@@ -2,7 +2,7 @@
 const express = require("express");
 const Exam = require("../models/Exam");
 const Question = require("../models/Question");
-const User = require("../models/User");
+const Grade = require("../models/Grade"); // Import the Grade model
 const authenticateToken = require("../middleware/auth");
 const router = express.Router();
 
@@ -32,15 +32,13 @@ router.get("/:courseId", async (req, res) => {
 router.post("/:courseId/submit", authenticateToken, async (req, res) => {
   const { answers } = req.body;
   const { courseId } = req.params;
-  const userId = req.user.id; // From authenticateToken middleware
+  const studentId = req.user.id; // From authenticateToken middleware
 
   try {
     // Fetch questions from the Question collection
     const questions = await Question.find({ courseId });
     if (!questions || questions.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Questions not found for this course" });
+      return res.status(404).json({ message: "Questions not found for this course" });
     }
 
     // Calculate score
@@ -54,34 +52,22 @@ router.post("/:courseId/submit", authenticateToken, async (req, res) => {
     const totalQuestions = questions.length;
     const percentage = (score / totalQuestions) * 100;
 
-    // Save the grade in the user's record
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (user.role !== "student") {
-      return res.status(403).json({ message: "Only students can submit exams" });
-    }
-
-    // Ensure user.grades is an array
-    if (!Array.isArray(user.grades)) {
-      user.grades = [];
-    }
-
-    // Check if the user already has a grade for this course
-    const existingGradeIndex = user.grades.findIndex(
-      (grade) => grade.courseId === courseId
-    );
-    if (existingGradeIndex !== -1) {
+    // Save the grade in the Grade model
+    const existingGrade = await Grade.findOne({ studentId, courseId });
+    if (existingGrade) {
       // Update existing grade
-      user.grades[existingGradeIndex].score = percentage;
+      existingGrade.score = percentage;
+      existingGrade.submittedAt = Date.now();
+      await existingGrade.save();
     } else {
       // Add new grade
-      user.grades.push({ courseId, score: percentage });
+      const newGrade = new Grade({
+        studentId,
+        courseId,
+        score: percentage,
+      });
+      await newGrade.save();
     }
-
-    await user.save();
 
     res.status(200).json({ score: percentage });
   } catch (err) {
