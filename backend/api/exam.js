@@ -29,6 +29,7 @@ router.get("/:courseId", async (req, res) => {
 });
 
 // Submit Exam for Grading
+// api/exam.js (updated)
 router.post("/:courseId/submit", authenticateToken, async (req, res) => {
   const { answers } = req.body;
   const { courseId } = req.params;
@@ -47,7 +48,16 @@ router.post("/:courseId/submit", authenticateToken, async (req, res) => {
     // Calculate score
     let score = 0;
     questions.forEach((question) => {
-      if (answers[question._id] === question.correctAnswer) {
+      const userAnswer = answers[question._id];
+      const correctAnswer = question.correctAnswer;
+      console.log("Comparing answers for question:", {
+        questionId: question._id,
+        questionText: question.text,
+        userAnswer,
+        correctAnswer,
+        isCorrect: userAnswer === correctAnswer,
+      });
+      if (userAnswer && correctAnswer && userAnswer.toUpperCase() === correctAnswer.toUpperCase()) {
         score += 1;
       }
     });
