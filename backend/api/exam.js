@@ -29,15 +29,19 @@ router.get("/:courseId", async (req, res) => {
 });
 
 // Submit Exam for Grading
+// api/exam.js (updated with more logging)
 router.post("/:courseId/submit", authenticateToken, async (req, res) => {
   const { answers } = req.body;
   const { courseId } = req.params;
   const studentId = req.user.id; // From authenticateToken middleware
 
   try {
+    console.log("Submitting exam for:", { studentId, courseId, answers });
+
     // Fetch questions from the Question collection
     const questions = await Question.find({ courseId });
     if (!questions || questions.length === 0) {
+      console.log("Questions not found for course:", courseId);
       return res.status(404).json({ message: "Questions not found for this course" });
     }
 
@@ -51,6 +55,7 @@ router.post("/:courseId/submit", authenticateToken, async (req, res) => {
 
     const totalQuestions = questions.length;
     const percentage = (score / totalQuestions) * 100;
+    console.log("Calculated score:", { score, totalQuestions, percentage });
 
     // Save the grade in the Grade model
     const existingGrade = await Grade.findOne({ studentId, courseId });
@@ -59,6 +64,7 @@ router.post("/:courseId/submit", authenticateToken, async (req, res) => {
       existingGrade.score = percentage;
       existingGrade.submittedAt = Date.now();
       await existingGrade.save();
+      console.log("Updated existing grade:", existingGrade);
     } else {
       // Add new grade
       const newGrade = new Grade({
@@ -67,6 +73,7 @@ router.post("/:courseId/submit", authenticateToken, async (req, res) => {
         score: percentage,
       });
       await newGrade.save();
+      console.log("Created new grade:", newGrade);
     }
 
     res.status(200).json({ score: percentage });
