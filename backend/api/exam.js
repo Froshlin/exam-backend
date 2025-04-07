@@ -29,7 +29,6 @@ router.get("/:courseId", async (req, res) => {
 });
 
 // Submit Exam for Grading
-// api/exam.js (updated with more logging)
 router.post("/:courseId/submit", authenticateToken, async (req, res) => {
   const { answers } = req.body;
   const { courseId } = req.params;
