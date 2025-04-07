@@ -1,11 +1,10 @@
-// Backend - Admin Routes
-
+// api/admin.js
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Question = require('../models/Question');
-const authMiddleware = require('../middleware/auth'); // Fixed incorrect casing
+const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 
 // Middleware to check if user is admin
@@ -22,12 +21,12 @@ const isAdmin = async (req, res, next) => {
     }
 };
 
-// Admin login
+// Admin login (public route)
 router.post('/login', async (req, res) => {
-    const { matricNumber, password } = req.body;
-    
+    const { email, password } = req.body;
+
     try {
-        let user = await User.findOne({ matricNumber });
+        let user = await User.findOne({ email });
 
         if (!user) {
             return res.status(400).json({ msg: 'Invalid credentials' });
@@ -46,10 +45,10 @@ router.post('/login', async (req, res) => {
         res.json({ token });
 
     } catch (err) {
-        res.status(500).send('Server error');
+        console.error("Login error:", err);
+        res.status(500).json({ msg: 'Server error' });
     }
 });
-
 
 // Add Exam Questions (Admin Only)
 router.post('/questions', authMiddleware, isAdmin, async (req, res) => {
@@ -60,7 +59,7 @@ router.post('/questions', authMiddleware, isAdmin, async (req, res) => {
         res.json({ msg: 'Question added successfully' });
     } catch (err) {
         console.error("Error adding question:", err);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error' });
     }
 });
 

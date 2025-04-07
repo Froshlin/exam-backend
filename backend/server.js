@@ -75,6 +75,9 @@ app.get('/', (req, res) => {
   res.send('API is running...');
 });
 
+// Public Admin Login Route
+app.use('/api/admin/login', adminRoutes); // This will only match /api/admin/login
+
 // Routes
 app.use('/api/auth', authRoutes); // Public route (no authentication required)
 app.use('/api/exam', authenticateToken, examRoutes);
