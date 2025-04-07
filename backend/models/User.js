@@ -25,7 +25,7 @@ const UserSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  lastActivity: { // Added for inactivity tracking
+  lastActivity: {
     type: Date,
     default: Date.now,
   },
