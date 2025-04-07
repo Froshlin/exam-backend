@@ -16,7 +16,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:3000', // Allow requests from your Next.js frontend
+  origin: 'https://exam-frontend-liart.vercel.app', // Allow requests from your Next.js frontend
   credentials: true,
 }));
 app.use(session({
