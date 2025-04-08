@@ -48,16 +48,23 @@ router.post("/:courseId/submit", authenticateToken, async (req, res) => {
     let score = 0;
     questions.forEach((question) => {
       const questionId = question._id.toString(); // Convert ObjectId to string
-      const userAnswer = answers[questionId];
-      const correctAnswer = question.correctAnswer;
+      const userAnswer = answers[questionId]; // e.g., "C"
+      const correctAnswer = question.correctAnswer; // e.g., "A material that allows electric current to pass through it easily"
+
+      // Map the user's selected letter to the corresponding option text
+      const optionIndex = userAnswer ? userAnswer.charCodeAt(0) - 65 : -1; // Convert "C" to index 2
+      const userAnswerText = optionIndex >= 0 && optionIndex < question.options.length ? question.options[optionIndex] : null;
+
       console.log("Comparing answers for question:", {
         questionId,
         questionText: question.text,
-        userAnswer,
-        correctAnswer,
-        isCorrect: userAnswer === correctAnswer,
+        userAnswer, // The letter (e.g., "C")
+        userAnswerText, // The mapped option text (e.g., "A material that allows electric current to pass through it easily")
+        correctAnswer, // The correct answer from the database
+        isCorrect: userAnswerText === correctAnswer,
       });
-      if (userAnswer && correctAnswer && userAnswer.toUpperCase() === correctAnswer.toUpperCase()) {
+
+      if (userAnswerText && correctAnswer && userAnswerText === correctAnswer) {
         score += 1;
       }
     });
