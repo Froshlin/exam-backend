@@ -2,7 +2,7 @@
 const express = require("express");
 const Exam = require("../models/Exam");
 const Question = require("../models/Question");
-const Grade = require("../models/Grade"); // Import the Grade model
+const Grade = require("../models/Grade");
 const authenticateToken = require("../middleware/auth");
 const router = express.Router();
 
@@ -29,7 +29,6 @@ router.get("/:courseId", async (req, res) => {
 });
 
 // Submit Exam for Grading
-// api/exam.js (updated)
 router.post("/:courseId/submit", authenticateToken, async (req, res) => {
   const { answers } = req.body;
   const { courseId } = req.params;
@@ -48,10 +47,11 @@ router.post("/:courseId/submit", authenticateToken, async (req, res) => {
     // Calculate score
     let score = 0;
     questions.forEach((question) => {
-      const userAnswer = answers[question._id];
+      const questionId = question._id.toString(); // Convert ObjectId to string
+      const userAnswer = answers[questionId];
       const correctAnswer = question.correctAnswer;
       console.log("Comparing answers for question:", {
-        questionId: question._id,
+        questionId,
         questionText: question.text,
         userAnswer,
         correctAnswer,
